@@ -7,6 +7,8 @@ import io.github.mitohondriyaa.product.model.Product;
 import io.github.mitohondriyaa.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,6 +18,8 @@ import java.util.List;
 @Slf4j
 public class ProductService {
     private final ProductRepository productRepository;
+    private final RedisCacheService redisCacheService;
+    private final RedisCounterService redisCounterService;
 
     public ProductResponse createProduct(ProductRequest productRequest) {
         Product product = Product.builder()
@@ -39,14 +43,27 @@ public class ProductService {
     }
 
     public ProductResponse getProductById(String id) {
+        Object cached = redisCacheService.getValue(id);
+
+        if (cached != null) {
+            return (ProductResponse) cached;
+        }
+
         Product product = productRepository.findById(id)
             .orElseThrow(() -> new NotFoundException("Product not found"));
-
-        return new ProductResponse(
+        ProductResponse productResponse = new ProductResponse(
             product.getId(),
             product.getName(),
             product.getDescription(),
             product.getPrice()
         );
+
+        Long count = redisCounterService.incrementAndGet(id);
+
+        if (count >= 5) {
+            redisCacheService.setValue(id, productResponse);
+        }
+
+        return productResponse;
     }
 }

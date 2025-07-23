@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 public class RedisCounterService {
     private final StringRedisTemplate redisCounterStringRedisTemplate;
 
-    public void increment(String key) {
-        redisCounterStringRedisTemplate.opsForValue().increment(key);
+    public Long incrementAndGet(String key) {
+        return redisCounterStringRedisTemplate.opsForValue().increment(key);
     }
 }
