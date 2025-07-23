@@ -89,4 +89,14 @@ public class ProductService {
 
         return productResponse;
     }
+
+    public void deleteProductById(String id) {
+        Product product = productRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Product not found"));
+
+        productRepository.delete(product);
+
+        redisCacheService.delete(id);
+        redisCounterService.delete(id);
+    }
 }

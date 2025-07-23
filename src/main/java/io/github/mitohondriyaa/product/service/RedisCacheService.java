@@ -18,4 +18,8 @@ public class RedisCacheService {
     public Object getValue(String key) {
         return redisCacheTemplate.opsForValue().get(key);
     }
+
+    public void delete(String key) {
+        redisCacheTemplate.delete(key);
+    }
 }

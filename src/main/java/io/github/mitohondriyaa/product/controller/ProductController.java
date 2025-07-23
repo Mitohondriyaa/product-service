@@ -28,12 +28,20 @@ public class ProductController {
     }
 
     @GetMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
     public ProductResponse getProductById(@PathVariable String id) {
         return productService.getProductById(id);
     }
 
     @PutMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
     public ProductResponse updateProductById(@PathVariable String id, @RequestBody ProductRequest productRequest) {
         return productService.updateProductById(id, productRequest);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteProductById(@PathVariable String id) {
+        productService.deleteProductById(id);
     }
 }
