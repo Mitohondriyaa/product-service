@@ -9,4 +9,18 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: password
       MONGO_INITDB_DATABASE: product-service
     volumes:
-      - ./data:/data/db
+      - ./mysql-data:/data/db
+  redis_cache:
+    image: redis:8.0
+    container_name: redis_cache_product
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-cache-data:/data
+  redis_counter:
+    image: redis:8.0
+    container_name: redis_counter_product
+    ports:
+      - "6380:6379"
+    volumes:
+      - ./redis-counter-data:/data
