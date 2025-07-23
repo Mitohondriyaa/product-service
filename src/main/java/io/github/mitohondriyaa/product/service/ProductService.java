@@ -2,6 +2,7 @@ package io.github.mitohondriyaa.product.service;
 
 import io.github.mitohondriyaa.product.dto.ProductRequest;
 import io.github.mitohondriyaa.product.dto.ProductResponse;
+import io.github.mitohondriyaa.product.exception.NotFoundException;
 import io.github.mitohondriyaa.product.model.Product;
 import io.github.mitohondriyaa.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -35,5 +36,17 @@ public class ProductService {
                 .stream()
                 .map(product -> new ProductResponse(product.getId(), product.getName(), product.getDescription(), product.getPrice()))
                 .toList();
+    }
+
+    public ProductResponse getProductById(String id) {
+        Product product = productRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Product not found"));
+
+        return new ProductResponse(
+            product.getId(),
+            product.getName(),
+            product.getDescription(),
+            product.getPrice()
+        );
     }
 }
