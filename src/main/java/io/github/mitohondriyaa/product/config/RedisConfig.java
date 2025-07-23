@@ -22,7 +22,7 @@ public class RedisConfig {
         return new LettuceConnectionFactory("localhost", 6380);
     }
 
-    @Bean
+    @Bean(name = "redisTemplate")
     public RedisTemplate<String, Object> redisCacheRedisTemplate(
         @Qualifier("redisCacheConnectionFactory")
         RedisConnectionFactory redisCacheConnectionFactory
