@@ -12,4 +12,8 @@ public class RedisCounterService {
     public Long incrementAndGet(String key) {
         return redisCounterStringRedisTemplate.opsForValue().increment(key);
     }
+
+    public void delete(String key) {
+        redisCounterStringRedisTemplate.delete(key);
+    }
 }

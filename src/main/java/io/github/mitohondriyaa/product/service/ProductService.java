@@ -66,4 +66,27 @@ public class ProductService {
 
         return productResponse;
     }
+
+    public ProductResponse updateProductById(String id, ProductRequest productRequest) {
+        Product product = productRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Product not found"));
+
+        product.setName(productRequest.name());
+        product.setDescription(productRequest.description());
+        product.setPrice(productRequest.price());
+
+        productRepository.save(product);
+
+        ProductResponse productResponse = new ProductResponse(
+            product.getId(),
+            product.getName(),
+            product.getDescription(),
+            product.getPrice()
+        );
+
+        redisCacheService.setValue(id, productResponse);
+        redisCounterService.delete(id);
+
+        return productResponse;
+    }
 }
