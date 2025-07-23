@@ -7,6 +7,7 @@ import io.github.mitohondriyaa.product.model.Product;
 import io.github.mitohondriyaa.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,8 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final RedisCacheService redisCacheService;
     private final RedisCounterService redisCounterService;
+    @Value("${cache.threshold}")
+    private Integer cacheThreshold;
 
     public ProductResponse createProduct(ProductRequest productRequest) {
         Product product = Product.builder()
@@ -60,7 +63,7 @@ public class ProductService {
 
         Long count = redisCounterService.incrementAndGet(id);
 
-        if (count >= 5) {
+        if (count >= cacheThreshold) {
             redisCacheService.setValue(id, productResponse);
         }
 
