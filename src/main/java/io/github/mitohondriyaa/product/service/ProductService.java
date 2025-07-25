@@ -3,6 +3,7 @@ package io.github.mitohondriyaa.product.service;
 import io.github.mitohondriyaa.product.dto.ProductRequest;
 import io.github.mitohondriyaa.product.dto.ProductResponse;
 import io.github.mitohondriyaa.product.event.ProductCreatedEvent;
+import io.github.mitohondriyaa.product.event.ProductDeletedEvent;
 import io.github.mitohondriyaa.product.exception.NotFoundException;
 import io.github.mitohondriyaa.product.model.Product;
 import io.github.mitohondriyaa.product.repository.ProductRepository;
@@ -22,7 +23,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final RedisCacheService redisCacheService;
     private final RedisCounterService redisCounterService;
-    private final KafkaTemplate<String, ProductCreatedEvent> kafkaTemplate;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     @Value("${cache.threshold}")
     private Integer cacheThreshold;
 
@@ -106,5 +107,10 @@ public class ProductService {
 
         redisCacheService.delete(id);
         redisCounterService.delete(id);
+
+        ProductDeletedEvent productDeletedEvent = new ProductDeletedEvent();
+        productDeletedEvent.setSkuCode(product.getName());
+
+        kafkaTemplate.send("product-deleted", productDeletedEvent);
     }
 }
