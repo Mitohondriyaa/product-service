@@ -1,5 +1,6 @@
 package io.github.mitohondriyaa.product.config;
 
+import io.github.mitohondriyaa.product.converter.KeycloakRealmRoleConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -29,8 +30,7 @@ public class SecurityConfig {
                 .anyRequest()
                 .authenticated())
             .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(Customizer
-                    .withDefaults()))
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(new KeycloakRealmRoleConverter())))
             .build();
     }
 }
