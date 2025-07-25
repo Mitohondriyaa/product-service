@@ -8,10 +8,7 @@ import io.github.mitohondriyaa.product.exception.NotFoundException;
 import io.github.mitohondriyaa.product.model.Product;
 import io.github.mitohondriyaa.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +34,7 @@ public class ProductService {
         productRepository.save(product);
 
         ProductCreatedEvent productCreatedEvent = new ProductCreatedEvent();
-        productCreatedEvent.setSkuCode(product.getName());
+        productCreatedEvent.setProductId(product.getId());
 
         kafkaTemplate.sendDefault(productCreatedEvent);
 
@@ -109,7 +106,7 @@ public class ProductService {
         redisCounterService.delete(id);
 
         ProductDeletedEvent productDeletedEvent = new ProductDeletedEvent();
-        productDeletedEvent.setSkuCode(product.getName());
+        productDeletedEvent.setProductId(product.getId());
 
         kafkaTemplate.send("product-deleted", productDeletedEvent);
     }
