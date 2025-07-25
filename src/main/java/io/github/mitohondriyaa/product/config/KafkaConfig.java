@@ -10,4 +10,9 @@ public class KafkaConfig {
     public NewTopic productCreatedTopic() {
         return new NewTopic("product-created", 3, (short) 2);
     }
+
+    @Bean
+    public NewTopic productDeletedTopic() {
+        return new NewTopic("product-deleted", 3, (short) 2);
+    }
 }
