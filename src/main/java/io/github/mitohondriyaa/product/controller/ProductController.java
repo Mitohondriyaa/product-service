@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -43,5 +44,11 @@ public class ProductController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteProductById(@PathVariable String id) {
         productService.deleteProductById(id);
+    }
+
+    @GetMapping("/price/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    public BigDecimal findPriceById(@PathVariable String id) {
+        return productService.findPriceById(id);
     }
 }

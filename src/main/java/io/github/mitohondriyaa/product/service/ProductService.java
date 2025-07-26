@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -109,5 +110,12 @@ public class ProductService {
         productDeletedEvent.setProductId(product.getId());
 
         kafkaTemplate.send("product-deleted", productDeletedEvent);
+    }
+
+    public BigDecimal findPriceById(String id) {
+        Product product = productRepository.findById(id)
+            .orElseThrow(() -> new NotFoundException("Product not found"));
+
+        return product.getPrice();
     }
 }
