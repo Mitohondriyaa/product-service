@@ -1,9 +1,9 @@
 package io.github.mitohondriyaa.product.config;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -11,17 +11,21 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-@Configuration
-@Profile("!test")
-public class RedisConfig {
+@TestConfiguration
+public class TestRedisConfig {
+    @Value("${redis.cache.port}")
+    private int redisCachePort;
+    @Value("${redis.counter.port}")
+    private int redisCounterPort;
+
     @Bean
     public RedisConnectionFactory redisCacheConnectionFactory() {
-        return new LettuceConnectionFactory("localhost", 6379);
+        return new LettuceConnectionFactory("localhost", redisCachePort);
     }
 
     @Bean
     public RedisConnectionFactory redisCounterConnectionFactory() {
-        return new LettuceConnectionFactory("localhost", 6380);
+        return new LettuceConnectionFactory("localhost", redisCounterPort);
     }
 
     @Bean(name = "redisTemplate")
