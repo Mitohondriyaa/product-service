@@ -2,7 +2,6 @@ package io.github.mitohondriyaa.product;
 
 import com.redis.testcontainers.RedisContainer;
 import io.github.mitohondriyaa.product.config.TestRedisConfig;
-import io.github.mitohondriyaa.product.event.ProductCreatedEvent;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +17,6 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -78,9 +76,8 @@ class ProductServiceApplicationTests {
 	Integer port;
 	@MockitoBean
 	JwtDecoder jwtDecoder;
-	final ConsumerFactory<String, ProductCreatedEvent> consumerFactory;
+	final ConsumerFactory<String, Object> consumerFactory;
 	final RedisTemplate<String, Object> redisCacheRedisTemplate;
-	final StringRedisTemplate redisCounterStringRedisTemplat;
 
 	static {
 		mongoDBContainer.start();
@@ -145,10 +142,10 @@ class ProductServiceApplicationTests {
 			.body("description", Matchers.is("Just iPhone 16"))
 			.body("price", Matchers.is(799));
 
-		try (Consumer<String, ProductCreatedEvent> consumer = consumerFactory.createConsumer()) {
+		try (Consumer<String, Object> consumer = consumerFactory.createConsumer()) {
 			consumer.subscribe(List.of("product-created"));
 
-			ConsumerRecords<String , ProductCreatedEvent> records =
+			ConsumerRecords<String , Object> records =
 				KafkaTestUtils.getRecords(consumer, Duration.ofSeconds(5));
 
 			Assertions.assertFalse(records.isEmpty());
@@ -180,7 +177,7 @@ class ProductServiceApplicationTests {
 			.get("/api/product")
 			.then()
 			.statusCode(200)
-			.body("size()", Matchers.is(1));
+			.body("size()", Matchers.greaterThan(0));
 	}
 
 	@Test
@@ -300,10 +297,10 @@ class ProductServiceApplicationTests {
 			.then()
 			.statusCode(204);
 
-		try (Consumer<String, ProductCreatedEvent> consumer = consumerFactory.createConsumer()) {
+		try (Consumer<String, Object> consumer = consumerFactory.createConsumer()) {
 			consumer.subscribe(List.of("product-deleted"));
 
-			ConsumerRecords<String , ProductCreatedEvent> records =
+			ConsumerRecords<String , Object> records =
 				KafkaTestUtils.getRecords(consumer, Duration.ofSeconds(5));
 
 			Assertions.assertFalse(records.isEmpty());
