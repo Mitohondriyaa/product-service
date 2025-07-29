@@ -32,7 +32,9 @@ import static org.mockito.Mockito.*;
 class ProductServiceApplicationTests {
 	static Network network = Network.newNetwork();
 	@ServiceConnection
-	static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:8");
+	static MongoDBContainer mongoDBContainer = new MongoDBContainer("mongo:8")
+		.withNetwork(network)
+		.withNetworkAliases("mongo");
 	@ServiceConnection
 	static ConfluentKafkaContainer kafkaContainer = new ConfluentKafkaContainer("confluentinc/cp-kafka:7.4.0")
 		.withListener("kafka:19092")
