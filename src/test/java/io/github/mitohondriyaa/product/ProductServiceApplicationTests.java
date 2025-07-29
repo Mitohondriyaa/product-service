@@ -86,10 +86,7 @@ class ProductServiceApplicationTests {
 	void setUp() {
 		RestAssured.baseURI = "http://localhost";
 		RestAssured.port = port;
-	}
 
-	@Test
-	void shouldCreateProduct() {
 		Map<String, Object> realmAccess = new HashMap<>();
 		realmAccess.put("roles", List.of("PRODUCT_MANAGER"));
 
@@ -103,7 +100,10 @@ class ProductServiceApplicationTests {
 			.build();
 
 		when(jwtDecoder.decode(anyString())).thenReturn(jwt);
+	}
 
+	@Test
+	void shouldCreateProduct() {
 		String requestBody = """
 				{
 					"name": "iPhone 16",
@@ -133,6 +133,34 @@ class ProductServiceApplicationTests {
 
 			Assertions.assertFalse(records.isEmpty());
 		}
+	}
+
+	@Test
+	void shouldGetAllProducts() {
+		String requestBody = """
+				{
+					"name": "iPhone 16",
+					"description": "Just iPhone 16",
+					"price": 799
+				}
+				""";
+
+		RestAssured.given()
+			.contentType(ContentType.JSON)
+			.header("Authorization", "Bearer mock-token")
+			.body(requestBody)
+			.when()
+			.post("/api/product")
+			.then()
+			.statusCode(201);
+
+		RestAssured.given()
+			.header("Authorization", "Bearer mock-token")
+			.when()
+			.get("/api/product")
+			.then()
+			.statusCode(200)
+			.body("size()", Matchers.is(1));
 	}
 
 	@AfterAll
