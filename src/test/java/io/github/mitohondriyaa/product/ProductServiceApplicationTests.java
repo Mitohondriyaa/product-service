@@ -310,6 +310,36 @@ class ProductServiceApplicationTests {
 		}
 	}
 
+	@Test
+	void shouldFindPriceById() {
+		String requestBody = """
+				{
+					"name": "iPhone 16",
+					"description": "Just iPhone 16",
+					"price": 799
+				}
+				""";
+
+		String id = RestAssured.given()
+			.contentType(ContentType.JSON)
+			.header("Authorization", "Bearer mock-token")
+			.body(requestBody)
+			.when()
+			.post("/api/product")
+			.then()
+			.statusCode(201)
+			.extract()
+			.path("id");
+
+		RestAssured.given()
+			.header("Authorization", "Bearer mock-token")
+			.when()
+			.get("/api/product/price/" + id)
+			.then()
+			.statusCode(200)
+			.body(Matchers.equalTo("799"));
+	}
+
 	@AfterAll
 	static void stopContainers() {
 		mongoDBContainer.stop();
