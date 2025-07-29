@@ -1,5 +1,6 @@
 package io.github.mitohondriyaa.product;
 
+import com.redis.testcontainers.RedisContainer;
 import io.github.mitohondriyaa.product.event.ProductCreatedEvent;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
@@ -58,6 +59,8 @@ class ProductServiceApplicationTests {
 		.withNetwork(network)
 		.withNetworkAliases("schema-registry")
 		.waitingFor(Wait.forHttp("/subjects"));
+	static RedisContainer cacheRedisContainer = new RedisContainer("redis:8.0");
+	static RedisContainer counterRedisContainer = new RedisContainer("redis:8.0");
 	@LocalServerPort
 	Integer port;
 	@MockitoBean
@@ -68,6 +71,8 @@ class ProductServiceApplicationTests {
 		mongoDBContainer.start();
 		kafkaContainer.start();
 		schemaRegistryContainer.start();
+		cacheRedisContainer.start();
+		counterRedisContainer.start();
 	}
 
 	ProductServiceApplicationTests(ConsumerFactory<String, ProductCreatedEvent> consumerFactory) {
@@ -168,5 +173,7 @@ class ProductServiceApplicationTests {
 		mongoDBContainer.stop();
 		kafkaContainer.stop();
 		schemaRegistryContainer.stop();
+		cacheRedisContainer.stop();
+		counterRedisContainer.stop();
 	}
 }
