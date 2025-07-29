@@ -272,6 +272,44 @@ class ProductServiceApplicationTests {
 			.body("price", Matchers.is(699));
 	}
 
+	@Test
+	public void shouldDeleteProductById() {
+		String requestBody = """
+				{
+					"name": "iPhone 16",
+					"description": "Just iPhone 16",
+					"price": 799
+				}
+				""";
+
+		String id = RestAssured.given()
+			.contentType(ContentType.JSON)
+			.header("Authorization", "Bearer mock-token")
+			.body(requestBody)
+			.when()
+			.post("/api/product")
+			.then()
+			.statusCode(201)
+			.extract()
+			.path("id");
+
+		RestAssured.given()
+			.header("Authorization", "Bearer mock-token")
+			.when()
+			.delete("/api/product/" + id)
+			.then()
+			.statusCode(204);
+
+		try (Consumer<String, ProductCreatedEvent> consumer = consumerFactory.createConsumer()) {
+			consumer.subscribe(List.of("product-deleted"));
+
+			ConsumerRecords<String , ProductCreatedEvent> records =
+				KafkaTestUtils.getRecords(consumer, Duration.ofSeconds(5));
+
+			Assertions.assertFalse(records.isEmpty());
+		}
+	}
+
 	@AfterAll
 	static void stopContainers() {
 		mongoDBContainer.stop();
