@@ -229,6 +229,49 @@ class ProductServiceApplicationTests {
 		Assertions.assertTrue(redisCacheRedisTemplate.hasKey(id));
 	}
 
+	@Test
+	public void shouldUpdateProductById() {
+		String requestBody = """
+				{
+					"name": "iPhone 16",
+					"description": "Just iPhone 16",
+					"price": 799
+				}
+				""";
+
+		String id = RestAssured.given()
+			.contentType(ContentType.JSON)
+			.header("Authorization", "Bearer mock-token")
+			.body(requestBody)
+			.when()
+			.post("/api/product")
+			.then()
+			.statusCode(201)
+			.extract()
+			.path("id");
+
+		String requestBodyForUpdate = """
+				{
+					"name": "iPhone 16",
+					"description": "Just iPhone 16",
+					"price": 699
+				}
+				""";
+
+		RestAssured.given()
+			.contentType(ContentType.JSON)
+			.header("Authorization", "Bearer mock-token")
+			.body(requestBodyForUpdate)
+			.when()
+			.put("/api/product/" + id)
+			.then()
+			.statusCode(200)
+			.body("id", Matchers.notNullValue())
+			.body("name", Matchers.is("iPhone 16"))
+			.body("description", Matchers.is("Just iPhone 16"))
+			.body("price", Matchers.is(699));
+	}
+
 	@AfterAll
 	static void stopContainers() {
 		mongoDBContainer.stop();
