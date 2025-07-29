@@ -1,19 +1,26 @@
 package io.github.mitohondriyaa.product;
 
+import io.github.mitohondriyaa.product.event.ProductCreatedEvent;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import org.apache.kafka.clients.consumer.Consumer;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.springframework.test.context.TestConstructor;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.MongoDBContainer;
@@ -21,6 +28,7 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.kafka.ConfluentKafkaContainer;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +37,7 @@ import static org.mockito.Mockito.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
+@TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
 class ProductServiceApplicationTests {
 	static Network network = Network.newNetwork();
 	@ServiceConnection
@@ -53,6 +62,7 @@ class ProductServiceApplicationTests {
 	Integer port;
 	@MockitoBean
 	JwtDecoder jwtDecoder;
+	ConsumerFactory<String, ProductCreatedEvent> consumerFactory;
 
 	static {
 		mongoDBContainer.start();
@@ -60,9 +70,15 @@ class ProductServiceApplicationTests {
 		schemaRegistryContainer.start();
 	}
 
+	ProductServiceApplicationTests(ConsumerFactory<String, ProductCreatedEvent> consumerFactory) {
+		this.consumerFactory = consumerFactory;
+	}
+
 	@DynamicPropertySource
 	static void dynamicProperties(DynamicPropertyRegistry registry) {
 		registry.add("spring.kafka.producer.properties.schema.registry.url",
+			() -> "http://localhost:" + schemaRegistryContainer.getMappedPort(8081));
+		registry.add("spring.kafka.consumer.properties.schema.registry.url",
 			() -> "http://localhost:" + schemaRegistryContainer.getMappedPort(8081));
 	}
 
@@ -108,6 +124,15 @@ class ProductServiceApplicationTests {
 			.body("name", Matchers.is("iPhone 16"))
 			.body("description", Matchers.is("Just iPhone 16"))
 			.body("price", Matchers.is(799));
+
+		try (Consumer<String, ProductCreatedEvent> consumer = consumerFactory.createConsumer()) {
+			consumer.subscribe(List.of("product-created"));
+
+			ConsumerRecords<String , ProductCreatedEvent> records =
+				KafkaTestUtils.getRecords(consumer, Duration.ofSeconds(5));
+
+			Assertions.assertFalse(records.isEmpty());
+		}
 	}
 
 	@AfterAll
