@@ -1,9 +1,11 @@
 package io.github.mitohondriyaa.product;
 
 import com.redis.testcontainers.RedisContainer;
+import io.github.mitohondriyaa.product.config.TestRedisConfig;
 import io.github.mitohondriyaa.product.event.ProductCreatedEvent;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.hamcrest.Matchers;
@@ -14,6 +16,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.core.ConsumerFactory;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -39,6 +44,8 @@ import static org.mockito.Mockito.*;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ActiveProfiles("test")
 @TestConstructor(autowireMode = TestConstructor.AutowireMode.ALL)
+@Import(TestRedisConfig.class)
+@RequiredArgsConstructor
 class ProductServiceApplicationTests {
 	static Network network = Network.newNetwork();
 	@ServiceConnection
@@ -71,7 +78,9 @@ class ProductServiceApplicationTests {
 	Integer port;
 	@MockitoBean
 	JwtDecoder jwtDecoder;
-	ConsumerFactory<String, ProductCreatedEvent> consumerFactory;
+	final ConsumerFactory<String, ProductCreatedEvent> consumerFactory;
+	final RedisTemplate<String, Object> redisCacheRedisTemplate;
+	final StringRedisTemplate redisCounterStringRedisTemplat;
 
 	static {
 		mongoDBContainer.start();
@@ -79,10 +88,6 @@ class ProductServiceApplicationTests {
 		schemaRegistryContainer.start();
 		cacheRedisContainer.start();
 		counterRedisContainer.start();
-	}
-
-	ProductServiceApplicationTests(ConsumerFactory<String, ProductCreatedEvent> consumerFactory) {
-		this.consumerFactory = consumerFactory;
 	}
 
 	@DynamicPropertySource
@@ -176,6 +181,52 @@ class ProductServiceApplicationTests {
 			.then()
 			.statusCode(200)
 			.body("size()", Matchers.is(1));
+	}
+
+	@Test
+	public void shouldGetProductById() {
+		String requestBody = """
+				{
+					"name": "iPhone 16",
+					"description": "Just iPhone 16",
+					"price": 799
+				}
+				""";
+
+		String id = RestAssured.given()
+			.contentType(ContentType.JSON)
+			.header("Authorization", "Bearer mock-token")
+			.body(requestBody)
+			.when()
+			.post("/api/product")
+			.then()
+			.statusCode(201)
+			.extract()
+			.path("id");
+
+		for (int i = 0; i < 4; i++) {
+			RestAssured.given()
+				.header("Authorization", "Bearer mock-token")
+				.when()
+				.get("/api/product/" + id)
+				.then()
+				.statusCode(200);
+
+			Assertions.assertFalse(redisCacheRedisTemplate.hasKey(id));
+		}
+
+		RestAssured.given()
+			.header("Authorization", "Bearer mock-token")
+			.when()
+			.get("/api/product/" + id)
+			.then()
+			.statusCode(200)
+			.body("id", Matchers.notNullValue())
+			.body("name", Matchers.is("iPhone 16"))
+			.body("description", Matchers.is("Just iPhone 16"))
+			.body("price", Matchers.is(799));
+
+		Assertions.assertTrue(redisCacheRedisTemplate.hasKey(id));
 	}
 
 	@AfterAll
