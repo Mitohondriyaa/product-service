@@ -59,8 +59,14 @@ class ProductServiceApplicationTests {
 		.withNetwork(network)
 		.withNetworkAliases("schema-registry")
 		.waitingFor(Wait.forHttp("/subjects"));
-	static RedisContainer cacheRedisContainer = new RedisContainer("redis:8.0");
-	static RedisContainer counterRedisContainer = new RedisContainer("redis:8.0");
+	static RedisContainer cacheRedisContainer = new RedisContainer("redis:8.0")
+		.withExposedPorts(6379)
+		.withNetwork(network)
+		.withNetworkAliases("redis_cache");
+	static RedisContainer counterRedisContainer = new RedisContainer("redis:8.0")
+		.withExposedPorts(6379)
+		.withNetwork(network)
+		.withNetworkAliases("redis_counter");
 	@LocalServerPort
 	Integer port;
 	@MockitoBean
@@ -85,6 +91,10 @@ class ProductServiceApplicationTests {
 			() -> "http://localhost:" + schemaRegistryContainer.getMappedPort(8081));
 		registry.add("spring.kafka.consumer.properties.schema.registry.url",
 			() -> "http://localhost:" + schemaRegistryContainer.getMappedPort(8081));
+		registry.add("redis.cache.port",
+			() -> cacheRedisContainer.getMappedPort(6379));
+		registry.add("redis.counter.port",
+			() -> counterRedisContainer.getMappedPort(6379));
 	}
 
 	@BeforeEach
