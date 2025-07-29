@@ -91,7 +91,7 @@ public class ProductService {
             product.getPrice()
         );
 
-        redisCacheService.setValue(id, productResponse);
+        redisCacheService.delete(id);
         redisCounterService.delete(id);
 
         return productResponse;
