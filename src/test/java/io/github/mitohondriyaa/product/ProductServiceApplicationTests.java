@@ -10,10 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.hamcrest.Matchers;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -167,6 +164,8 @@ class ProductServiceApplicationTests {
 		product.setDescription("Just iPhone 16");
 		product.setPrice(new BigDecimal(799));
 
+		productRepository.save(product);
+
 		RestAssured.given()
 			.header("Authorization", "Bearer mock-token")
 			.when()
@@ -285,6 +284,11 @@ class ProductServiceApplicationTests {
 			.then()
 			.statusCode(200)
 			.body(Matchers.equalTo("799"));
+	}
+
+	@AfterEach
+	void tearDown() {
+		productRepository.deleteAll();
 	}
 
 	@AfterAll
