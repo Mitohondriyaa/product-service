@@ -8,12 +8,14 @@ import io.github.mitohondriyaa.product.exception.NotFoundException;
 import io.github.mitohondriyaa.product.model.Product;
 import io.github.mitohondriyaa.product.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +39,11 @@ public class ProductService {
         ProductCreatedEvent productCreatedEvent = new ProductCreatedEvent();
         productCreatedEvent.setProductId(product.getId());
 
-        kafkaTemplate.sendDefault(productCreatedEvent);
+        ProducerRecord<String, Object> producerRecord
+            = new ProducerRecord<>("product-created", productCreatedEvent);
+        producerRecord.headers().add("messageId", UUID.randomUUID().toString().getBytes());
+
+        kafkaTemplate.send(producerRecord);
 
         return new ProductResponse(product.getId(), product.getName(), product.getDescription(), product.getPrice());
     }
@@ -109,7 +115,11 @@ public class ProductService {
         ProductDeletedEvent productDeletedEvent = new ProductDeletedEvent();
         productDeletedEvent.setProductId(product.getId());
 
-        kafkaTemplate.send("product-deleted", productDeletedEvent);
+        ProducerRecord<String, Object> producerRecord
+            = new ProducerRecord<>("product-deleted", productDeletedEvent);
+        producerRecord.headers().add("messageId", UUID.randomUUID().toString().getBytes());
+
+        kafkaTemplate.send(producerRecord);
     }
 
     public BigDecimal findPriceById(String id) {
