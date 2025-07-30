@@ -172,7 +172,7 @@ class ProductServiceApplicationTests {
 			.get("/api/product")
 			.then()
 			.statusCode(200)
-			.body("size()", Matchers.greaterThan(0));
+			.body("size()", Matchers.is(1));
 	}
 
 	@Test
