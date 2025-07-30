@@ -2,6 +2,8 @@ package io.github.mitohondriyaa.product;
 
 import com.redis.testcontainers.RedisContainer;
 import io.github.mitohondriyaa.product.config.TestRedisConfig;
+import io.github.mitohondriyaa.product.model.Product;
+import io.github.mitohondriyaa.product.repository.ProductRepository;
 import io.restassured.RestAssured;
 import io.restassured.http.ContentType;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +34,7 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.kafka.ConfluentKafkaContainer;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
@@ -78,6 +81,7 @@ class ProductServiceApplicationTests {
 	JwtDecoder jwtDecoder;
 	final ConsumerFactory<String, Object> consumerFactory;
 	final RedisTemplate<String, Object> redisCacheRedisTemplate;
+	final ProductRepository productRepository;
 
 	static {
 		mongoDBContainer.start();
@@ -129,7 +133,7 @@ class ProductServiceApplicationTests {
 				}
 				""";
 
-		RestAssured.given()
+		String id = RestAssured.given()
 			.contentType(ContentType.JSON)
 			.header("Authorization", "Bearer mock-token")
 			.body(requestBody)
@@ -140,7 +144,9 @@ class ProductServiceApplicationTests {
 			.body("id", Matchers.notNullValue())
 			.body("name", Matchers.is("iPhone 16"))
 			.body("description", Matchers.is("Just iPhone 16"))
-			.body("price", Matchers.is(799));
+			.body("price", Matchers.is(799))
+			.extract()
+			.path("id");
 
 		try (Consumer<String, Object> consumer = consumerFactory.createConsumer()) {
 			consumer.subscribe(List.of("product-created"));
@@ -150,26 +156,16 @@ class ProductServiceApplicationTests {
 
 			Assertions.assertFalse(records.isEmpty());
 		}
+
+		Assertions.assertTrue(productRepository.existsById(id));
 	}
 
 	@Test
 	void shouldGetAllProducts() {
-		String requestBody = """
-				{
-					"name": "iPhone 16",
-					"description": "Just iPhone 16",
-					"price": 799
-				}
-				""";
-
-		RestAssured.given()
-			.contentType(ContentType.JSON)
-			.header("Authorization", "Bearer mock-token")
-			.body(requestBody)
-			.when()
-			.post("/api/product")
-			.then()
-			.statusCode(201);
+		Product product = new Product();
+		product.setName("iPhone 16");
+		product.setDescription("Just iPhone 16");
+		product.setPrice(new BigDecimal(799));
 
 		RestAssured.given()
 			.header("Authorization", "Bearer mock-token")
@@ -182,24 +178,12 @@ class ProductServiceApplicationTests {
 
 	@Test
 	public void shouldGetProductById() {
-		String requestBody = """
-				{
-					"name": "iPhone 16",
-					"description": "Just iPhone 16",
-					"price": 799
-				}
-				""";
+		Product product = new Product();
+		product.setName("iPhone 16");
+		product.setDescription("Just iPhone 16");
+		product.setPrice(new BigDecimal(799));
 
-		String id = RestAssured.given()
-			.contentType(ContentType.JSON)
-			.header("Authorization", "Bearer mock-token")
-			.body(requestBody)
-			.when()
-			.post("/api/product")
-			.then()
-			.statusCode(201)
-			.extract()
-			.path("id");
+		String id = productRepository.save(product).getId();
 
 		for (int i = 0; i < 4; i++) {
 			RestAssured.given()
@@ -228,26 +212,14 @@ class ProductServiceApplicationTests {
 
 	@Test
 	public void shouldUpdateProductById() {
+		Product product = new Product();
+		product.setName("iPhone 16");
+		product.setDescription("Just iPhone 16");
+		product.setPrice(new BigDecimal(799));
+
+		String id = productRepository.save(product).getId();
+
 		String requestBody = """
-				{
-					"name": "iPhone 16",
-					"description": "Just iPhone 16",
-					"price": 799
-				}
-				""";
-
-		String id = RestAssured.given()
-			.contentType(ContentType.JSON)
-			.header("Authorization", "Bearer mock-token")
-			.body(requestBody)
-			.when()
-			.post("/api/product")
-			.then()
-			.statusCode(201)
-			.extract()
-			.path("id");
-
-		String requestBodyForUpdate = """
 				{
 					"name": "iPhone 16",
 					"description": "Just iPhone 16",
@@ -258,7 +230,7 @@ class ProductServiceApplicationTests {
 		RestAssured.given()
 			.contentType(ContentType.JSON)
 			.header("Authorization", "Bearer mock-token")
-			.body(requestBodyForUpdate)
+			.body(requestBody)
 			.when()
 			.put("/api/product/" + id)
 			.then()
@@ -271,24 +243,12 @@ class ProductServiceApplicationTests {
 
 	@Test
 	public void shouldDeleteProductById() {
-		String requestBody = """
-				{
-					"name": "iPhone 16",
-					"description": "Just iPhone 16",
-					"price": 799
-				}
-				""";
+		Product product = new Product();
+		product.setName("iPhone 16");
+		product.setDescription("Just iPhone 16");
+		product.setPrice(new BigDecimal(799));
 
-		String id = RestAssured.given()
-			.contentType(ContentType.JSON)
-			.header("Authorization", "Bearer mock-token")
-			.body(requestBody)
-			.when()
-			.post("/api/product")
-			.then()
-			.statusCode(201)
-			.extract()
-			.path("id");
+		String id = productRepository.save(product).getId();
 
 		RestAssured.given()
 			.header("Authorization", "Bearer mock-token")
@@ -305,28 +265,18 @@ class ProductServiceApplicationTests {
 
 			Assertions.assertFalse(records.isEmpty());
 		}
+
+		Assertions.assertFalse(productRepository.existsById(id));
 	}
 
 	@Test
 	void shouldFindPriceById() {
-		String requestBody = """
-				{
-					"name": "iPhone 16",
-					"description": "Just iPhone 16",
-					"price": 799
-				}
-				""";
+		Product product = new Product();
+		product.setName("iPhone 16");
+		product.setDescription("Just iPhone 16");
+		product.setPrice(new BigDecimal(799));
 
-		String id = RestAssured.given()
-			.contentType(ContentType.JSON)
-			.header("Authorization", "Bearer mock-token")
-			.body(requestBody)
-			.when()
-			.post("/api/product")
-			.then()
-			.statusCode(201)
-			.extract()
-			.path("id");
+		String id = productRepository.save(product).getId();
 
 		RestAssured.given()
 			.header("Authorization", "Bearer mock-token")
@@ -344,5 +294,6 @@ class ProductServiceApplicationTests {
 		schemaRegistryContainer.stop();
 		cacheRedisContainer.stop();
 		counterRedisContainer.stop();
+		network.close();
 	}
 }
