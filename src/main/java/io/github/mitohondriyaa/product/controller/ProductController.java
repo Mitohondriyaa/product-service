@@ -3,6 +3,7 @@ package io.github.mitohondriyaa.product.controller;
 import io.github.mitohondriyaa.product.dto.ProductRequest;
 import io.github.mitohondriyaa.product.dto.ProductResponse;
 import io.github.mitohondriyaa.product.service.ProductService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +19,7 @@ public class ProductController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ProductResponse createProduct(@RequestBody ProductRequest productRequest) {
+    public ProductResponse createProduct(@Valid @RequestBody ProductRequest productRequest) {
         return productService.createProduct(productRequest);
     }
 
