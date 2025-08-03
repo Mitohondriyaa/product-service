@@ -1,6 +1,7 @@
 package io.github.mitohondriyaa.product.config;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -14,14 +15,23 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 @Profile("!test")
 public class RedisConfig {
+    @Value("${redis.cache.host}")
+    private String redisCacheHost;
+    @Value("${redis.cache.port}")
+    private Integer redisCachePort;
+    @Value("${redis.counter.host}")
+    private String redisCounterHost;
+    @Value("${redis.counter.port}")
+    private Integer redisCounterPort;
+
     @Bean
     public RedisConnectionFactory redisCacheConnectionFactory() {
-        return new LettuceConnectionFactory("localhost", 6379);
+        return new LettuceConnectionFactory(redisCacheHost, redisCachePort);
     }
 
     @Bean
     public RedisConnectionFactory redisCounterConnectionFactory() {
-        return new LettuceConnectionFactory("localhost", 6380);
+        return new LettuceConnectionFactory(redisCounterHost, redisCounterPort);
     }
 
     @Bean(name = "redisTemplate")
